@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>POO con Canvas</title>
+
+    <!-- Enlace a Bootstrap -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background-color: #000000;
+        }
+        .card {
+            width: 60%;
+            max-width: 800px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        }
+        #canvas {
+            display: block;
+            margin: 0 auto;
+            width: 90%;
+            height: auto;
+            background-image: url('https://th.bing.com/th/id/OIG1.1pLC3dMELUnRnkGYijSf?pid=ImgGn'); /* URL de la imagen */
+            background-size: cover; /* Ajusta la imagen para cubrir todo el canvas */
+            background-position: center; /* Centra la imagen */
+        }
+    </style>
+</head>
+
+<body>
+    <!-- Tarjeta Bootstrap -->
+    <div class="card text-center">
+        <div class="card-header bg-dark text-white">
+            <h3>Colisión</h3>
+        </div>
+        <div class="card-body">
+            <canvas id="canvas"></canvas>
+        </div>
+        <div class="card-footer text-muted">
+            ¡Diviértete viendo cómo interactúan los círculos!
+        </div>
+    </div>
+
+    <script>
+        // Tu código JavaScript
+        const canvas = document.getElementById("canvas");
+        const ctx = canvas.getContext("2d");
+
+        // Dimensiones del canvas
+        const window_height = canvas.height = window.innerHeight * 0.6;
+        const window_width = canvas.width = window.innerWidth * 0.9;
+
+        // Cargar el sonido de colisión
+        const collisionSound = new Audio('cho.mp3');
+
+        class Circle {
+            constructor(x, y, radius, color, text, speed) {
+                this.posX = x;
+                this.posY = y;
+                this.radius = radius;
+                this.color = color;
+                this.baseColor = color;
+                this.text = text;
+                this.speed = speed;
+
+                this.collisionCount = 0;
+
+                this.dx = Math.random() < 0.5 ? -this.speed : this.speed;
+                this.dy = Math.random() < 0.5 ? -this.speed : this.speed;
+            }
+
+            draw(context) {
+                context.beginPath();
+                context.fillStyle = this.color;
+                context.arc(this.posX, this.posY, this.radius, 0, Math.PI * 2, false);
+                context.fill();
+                context.strokeStyle = "black";
+                context.lineWidth = 2;
+                context.stroke();
+                context.closePath();
+
+                context.fillStyle = "black";
+                context.textAlign = "center";
+                context.textBaseline = "middle";
+                context.font = "20px Arial";
+                context.fillText(`${this.text} (${this.collisionCount})`, this.posX, this.posY);
+            }
+
+            update(context) {
+                this.draw(context);
+
+                if ((this.posX + this.radius) > window_width || (this.posX - this.radius) < 0) {
+                    this.dx = -this.dx;
+                }
+                if ((this.posY + this.radius) > window_height || (this.posY - this.radius) < 0) {
+                    this.dy = -this.dy;
+                }
+
+                this.posX += this.dx;
+                this.posY += this.dy;
+            }
+
+            collidesWith(otherCircle) {
+                const dx = this.posX - otherCircle.posX;
+                const dy = this.posY - otherCircle.posY;
+                const distance = Math.sqrt(dx * dx + dy * dy);
+                return distance < this.radius + otherCircle.radius;
+            }
+
+            changeColor() {
+                const colors = ["red", "green", "yellow", "purple", "orange"];
+                this.color = colors[Math.floor(Math.random() * colors.length)];
+            }
+        }
+
+        const circles = [];
+        const N = 5;
+
+        for (let i = 0; i < N; i++) {
+            const randomX = Math.random() * (window_width - 50) + 25;
+            const randomY = Math.random() * (window_height - 50) + 25;
+            const randomRadius = Math.floor(Math.random() * 30 + 20);
+            const randomSpeed = Math.random() * 2 + 1;
+
+            circles.push(new Circle(randomX, randomY, randomRadius, "blue", `${i + 1}`, randomSpeed));
+        }
+
+        const updateCircles = function () {
+            requestAnimationFrame(updateCircles);
+            ctx.clearRect(0, 0, window_width, window_height);
+
+            for (let i = 0; i < circles.length; i++) {
+                circles[i].update(ctx);
+
+                for (let j = i + 1; j < circles.length; j++) {
+                    if (circles[i].collidesWith(circles[j])) {
+                        circles[i].changeColor();
+                        circles[j].changeColor();
+                        circles[i].collisionCount++;
+                        circles[j].collisionCount++;
+
+                        collisionSound.currentTime = 0;
+                        collisionSound.play();
+                    }
+                }
+            }
+        };
+
+        updateCircles();
+    </script>
+
+    <!-- Enlace a Bootstrap Bundle con JavaScript -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+
+</html>
